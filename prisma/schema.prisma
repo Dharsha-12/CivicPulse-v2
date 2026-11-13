@@ -1,0 +1,67 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CITIZEN
+  WORKER
+  ADMIN
+}
+
+enum IssueStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum IssueCategory {
+  POTHOLE
+  STREETLIGHT
+  GARBAGE
+  WATER_LEAK
+  DRAINAGE
+}
+
+model User {
+  id             String    @id @default(cuid())
+  name           String
+  email          String    @unique
+  passwordHash   String
+  role           Role
+  city           String
+  department     String?
+  createdAt      DateTime  @default(now())
+
+  reportedIssues Issue[]   @relation("CitizenIssues")
+  assignedIssues Issue[]   @relation("WorkerIssues")
+}
+
+model Issue {
+  id               String        @id @default(cuid())
+  title            String
+  description      String
+  category         IssueCategory
+  status           IssueStatus   @default(OPEN)
+  latitude         Float
+  longitude        Float
+  address          String
+  city             String
+  imageUrl         String?
+  resolutionNote   String?
+  resolvedAt       DateTime?
+  upvotes          Int           @default(0)
+  citizenId        String
+  citizen          User          @relation("CitizenIssues", fields: [citizenId], references: [id], onDelete: Cascade)
+  assignedWorkerId String?
+  assignedWorker   User?         @relation("WorkerIssues", fields: [assignedWorkerId], references: [id], onDelete: SetNull)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+}
